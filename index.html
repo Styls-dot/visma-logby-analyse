@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visma Logby – Kampagneanalyse | Altid Energi</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #101D2F;
+            --blue: #033B8C;
+            --blue-light: #0a4fad;
+            --teal: #73D0E7;
+            --teal-muted: rgba(115,208,231,0.35);
+            --yellow: #FFD15C;
+            --red: #E8443A;
+            --green: #10b981;
+            --green-bg: #ecfdf5;
+            --white: #FFFFFF;
+            --g50: #f8fafc; --g100: #f1f5f9; --g200: #e2e8f0; --g300: #cbd5e1;
+            --g400: #94a3b8; --g500: #64748b; --g600: #475569; --g700: #334155;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+            --radius: 16px;
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--g50); color: var(--navy); }
+
+        /* ── Topbar ── */
+        .topbar { background: linear-gradient(135deg, var(--navy) 0%, #1a2d45 100%); padding: 18px 40px; display: flex; align-items: center; justify-content: space-between; }
+        .topbar-left { display: flex; align-items: center; gap: 10px; }
+        .topbar-dot { width: 8px; height: 8px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px rgba(115,208,231,0.5); }
+        .topbar-brand { color: var(--white); font-weight: 700; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; }
+        .topbar-right { color: var(--g400); font-size: 12px; font-weight: 500; }
+
+        .page { max-width: 1140px; margin: 0 auto; padding: 36px 28px 80px; }
+
+        /* ── Header ── */
+        .page-header { margin-bottom: 36px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .page-header-text h1 { font-size: 28px; font-weight: 700; line-height: 1.25; }
+        .page-header-text .sub { font-size: 14px; color: var(--g500); margin-top: 4px; }
+        .live-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--green-bg); color: var(--green); font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 20px; letter-spacing: 0.3px; }
+        .live-pill .pulse { width: 7px; height: 7px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(16,185,129,0); } }
+
+        /* ── KPIs ── */
+        .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 28px; }
+        .kpi { background: var(--white); border-radius: var(--radius); padding: 20px 22px; border: 1px solid var(--g200); transition: box-shadow 0.2s, transform 0.2s; }
+        .kpi:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+        .kpi-label { font-size: 11px; font-weight: 600; color: var(--g400); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 6px; }
+        .kpi-value { font-size: 30px; font-weight: 700; color: var(--navy); line-height: 1.1; }
+        .kpi-detail { font-size: 12px; color: var(--g400); margin-top: 3px; }
+        .kpi.accent .kpi-value { color: var(--blue); }
+        .kpi.accent-green .kpi-value { color: var(--green); }
+        .kpi-trend { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; margin-top: 6px; padding: 2px 8px; border-radius: 8px; }
+        .kpi-trend.up { background: var(--green-bg); color: var(--green); }
+
+        /* ── Card ── */
+        .card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--g200); padding: 28px; margin-bottom: 22px; transition: box-shadow 0.2s; }
+        .card:hover { box-shadow: var(--shadow-sm); }
+        .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .card-head h2 { font-size: 15px; font-weight: 700; }
+        .badge { font-size: 10px; font-weight: 700; color: var(--g400); background: var(--g100); padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.6px; }
+        .badge-live { background: var(--green-bg); color: var(--green); }
+
+        .chart-h { position: relative; height: 400px; }
+        .chart-sm { position: relative; height: 300px; }
+
+        /* ── Legend ── */
+        .legend { display: flex; gap: 20px; margin-top: 14px; justify-content: center; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; color: var(--g500); }
+        .legend-swatch { width: 12px; height: 12px; border-radius: 3px; }
+        .legend-line { width: 18px; height: 0; border-top: 2px dashed var(--red); }
+
+        /* ── Table ── */
+        .tbl { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .tbl thead th { font-size: 10px; font-weight: 700; color: var(--g400); text-transform: uppercase; letter-spacing: 0.7px; text-align: left; padding: 0 14px 14px; border-bottom: 2px solid var(--g100); }
+        .tbl thead th:last-child, .tbl tbody td:last-child { text-align: right; }
+        .tbl tbody tr { transition: background 0.12s; }
+        .tbl tbody tr:hover { background: var(--g50); }
+        .tbl tbody td { padding: 14px; font-size: 13px; border-bottom: 1px solid var(--g100); vertical-align: middle; }
+        .num-badge { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 10px; font-size: 12px; font-weight: 800; color: var(--white); background: var(--blue); }
+        .num-badge.hot { background: var(--red); }
+        .num-badge.live { background: var(--green); }
+        .td-main { font-weight: 600; color: var(--navy); }
+        .td-sub { font-size: 11px; color: var(--g400); margin-top: 1px; }
+        .mini-bar { display: flex; align-items: center; gap: 10px; }
+        .mini-bar-track { flex: 1; height: 10px; background: var(--g100); border-radius: 5px; overflow: hidden; min-width: 80px; }
+        .mini-bar-fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--blue) 0%, var(--teal) 100%); transition: width 0.8s ease; }
+        .mini-bar-fill.hot { background: linear-gradient(90deg, var(--red) 0%, #f97066 100%); }
+        .mini-bar-fill.live { background: linear-gradient(90deg, var(--green) 0%, #34d399 100%); }
+        .mini-bar-val { font-size: 16px; font-weight: 800; color: var(--navy); min-width: 36px; text-align: right; }
+        .live-tag { display: inline-block; font-size: 9px; font-weight: 800; color: var(--green); background: var(--green-bg); padding: 2px 7px; border-radius: 8px; margin-left: 6px; vertical-align: middle; letter-spacing: 0.5px; }
+
+        /* ── Grid ── */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 22px; }
+
+        /* ── Insight box ── */
+        .insight { background: linear-gradient(135deg, #f0f7ff 0%, #f8fafc 100%); border: 1px solid #dbeafe; border-radius: var(--radius); padding: 22px 26px; margin-bottom: 22px; }
+        .insight-title { font-size: 12px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px; }
+        .insight-text { font-size: 14px; color: var(--g600); line-height: 1.6; }
+        .insight-text strong { color: var(--navy); }
+
+        /* ── Footer ── */
+        .page-footer { text-align: center; margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--g200); font-size: 11px; color: var(--g400); line-height: 1.7; }
+
+        @media (max-width: 900px) {
+            .kpi-row { grid-template-columns: repeat(2, 1fr); }
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left"><div class="topbar-dot"></div><span class="topbar-brand">Altid Energi</span></div>
+    <div class="topbar-right">Visma Logby &middot; Partner&shy;analyse &middot; 27. marts 2026</div>
+</div>
+
+<div class="page">
+    <div class="page-header">
+        <div class="page-header-text">
+            <h1>E-mailkampagner via Visma Logby</h1>
+            <div class="sub">Tilmeldinger fra partner-e-mails &middot; sep 2024 &ndash; mar 2026</div>
+        </div>
+        <div class="live-pill"><span class="pulse"></span> Kampagne 7 er live</div>
+    </div>
+
+    <div class="kpi-row">
+        <div class="kpi accent" id="kpiTotal"></div>
+        <div class="kpi" id="kpiCampaigns"></div>
+        <div class="kpi" id="kpiAvg"></div>
+        <div class="kpi accent" id="kpiBest"></div>
+        <div class="kpi accent-green" id="kpiLive"></div>
+    </div>
+
+    <!-- Main timeline chart -->
+    <div class="card">
+        <div class="card-head">
+            <h2>Ugentlige tilmeldinger over tid</h2>
+            <span class="badge">Ugeaggregeret</span>
+        </div>
+        <div class="chart-h"><canvas id="mainChart"></canvas></div>
+        <div class="legend">
+            <div class="legend-item"><div class="legend-swatch" style="background:var(--blue)"></div>Kampagneuge</div>
+            <div class="legend-item"><div class="legend-swatch" style="background:var(--teal-muted)"></div>Organisk</div>
+            <div class="legend-item"><div class="legend-swatch" style="background:var(--green)"></div>Live kampagne</div>
+            <div class="legend-item"><div class="legend-line"></div>E-mailudsendelse</div>
+        </div>
+    </div>
+
+    <!-- Insight -->
+    <div class="insight">
+        <div class="insight-title">Nøgleindsigt</div>
+        <div class="insight-text" id="insightText"></div>
+    </div>
+
+    <!-- Campaign table -->
+    <div class="card">
+        <div class="card-head">
+            <h2>Kampagneoversigt</h2>
+            <span class="badge">Alle 7 udsendelser</span>
+        </div>
+        <table class="tbl">
+            <thead><tr><th style="width:40px">#</th><th>Dato (estimeret)</th><th>Topdag</th><th>Responstid</th><th>Tilmeldinger</th></tr></thead>
+            <tbody id="tblBody"></tbody>
+        </table>
+    </div>
+
+    <!-- 3-col charts -->
+    <div class="grid-3">
+        <div class="card">
+            <div class="card-head"><h2>Kampagne vs. organisk</h2><span class="badge">Fordeling</span></div>
+            <div class="chart-sm"><canvas id="pieChart"></canvas></div>
+        </div>
+        <div class="card">
+            <div class="card-head"><h2>Respons-kurve</h2><span class="badge">Dag 0–6</span></div>
+            <div class="chart-sm"><canvas id="responseChart"></canvas></div>
+        </div>
+        <div class="card">
+            <div class="card-head"><h2>Kampagnestørrelse</h2><span class="badge">Ranking</span></div>
+            <div class="chart-sm"><canvas id="rankChart"></canvas></div>
+        </div>
+    </div>
+
+    <!-- Daily detail for campaign 7 -->
+    <div class="card">
+        <div class="card-head">
+            <h2>Kampagne 7 — Live detaljer (26. mar ~kl. 17:00)</h2>
+            <span class="badge badge-live">Live</span>
+        </div>
+        <div class="chart-sm"><canvas id="liveChart"></canvas></div>
+    </div>
+
+    <!-- Hourly chart for campaign 7 -->
+    <div class="card">
+        <div class="card-head">
+            <h2>Kampagne 7 — Tilmeldinger pr. time</h2>
+            <span class="badge badge-live">Timeopdeling</span>
+        </div>
+        <div class="chart-sm"><canvas id="hourlyChart"></canvas></div>
+    </div>
+
+    <div class="page-footer">
+        Analyse baseret på tilmeldingsmønstre. E-maildatoer er estimerede ud fra klynger af tilmeldinger.<br>
+        Altid Energi &middot; Visma Logby Partneranalyse &middot; Genereret 27. marts 2026
+    </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════
+const raw = [
+    "2024-09-18 11:22","2025-03-18 14:14","2025-03-18 14:16","2025-03-18 14:18","2025-03-18 14:20",
+    "2025-03-18 14:22","2025-03-18 14:29","2025-03-18 14:33","2025-03-18 14:35","2025-03-18 14:38",
+    "2025-03-25 15:05","2025-03-26 10:07","2025-04-09 06:05","2025-04-10 14:36","2025-04-11 06:26",
+    "2025-04-11 07:47","2025-04-21 20:22","2025-04-26 06:16","2025-04-27 08:20","2025-04-30 21:15",
+    "2025-05-03 19:18","2025-05-14 08:30","2025-05-14 08:40","2025-05-14 09:16","2025-05-14 11:15",
+    "2025-05-15 19:46","2025-05-20 17:45","2025-05-22 06:14","2025-05-23 11:24","2025-05-24 08:01",
+    "2025-05-24 08:37","2025-05-24 08:45","2025-05-24 08:54","2025-05-24 09:05","2025-05-24 09:34",
+    "2025-05-24 09:37","2025-05-24 09:39","2025-05-24 09:52","2025-05-24 09:58","2025-05-24 10:13",
+    "2025-05-24 12:04","2025-05-24 12:22","2025-05-24 12:23","2025-05-24 13:00","2025-05-24 13:25",
+    "2025-05-24 13:30","2025-05-24 14:34","2025-05-24 14:44","2025-05-24 16:02","2025-05-24 16:46",
+    "2025-05-24 16:49","2025-05-24 17:35","2025-05-24 18:41","2025-05-24 19:12","2025-05-24 20:37",
+    "2025-05-24 21:56","2025-05-25 05:29","2025-05-25 05:44","2025-05-25 05:47","2025-05-25 06:57",
+    "2025-05-25 07:33","2025-05-25 07:54","2025-05-25 08:15","2025-05-25 08:25","2025-05-25 08:29",
+    "2025-05-25 09:05","2025-05-25 09:08","2025-05-25 09:12","2025-05-25 09:35","2025-05-25 09:39",
+    "2025-05-25 10:06","2025-05-25 19:01","2025-05-26 04:42","2025-05-26 05:28","2025-05-26 05:58",
+    "2025-05-26 06:13","2025-05-26 06:34","2025-05-26 06:39","2025-05-26 06:59","2025-05-26 07:13",
+    "2025-05-26 07:55","2025-05-26 09:18","2025-05-26 10:19","2025-05-26 10:19","2025-05-26 10:48",
+    "2025-05-26 11:29","2025-05-26 11:59","2025-05-26 12:37","2025-05-26 13:50","2025-05-26 14:55",
+    "2025-05-26 21:53","2025-05-27 06:35","2025-05-27 08:29","2025-05-27 16:39","2025-05-28 06:00",
+    "2025-05-28 13:02","2025-05-30 07:56","2025-05-30 13:41","2025-06-01 12:44","2025-06-02 13:44",
+    "2025-06-03 06:37","2025-06-03 14:13","2025-06-08 10:47","2025-06-11 12:23","2025-06-16 09:22",
+    "2025-06-16 09:23","2025-06-18 09:32","2025-06-23 09:05","2025-06-23 12:40","2025-06-24 12:07",
+    "2025-06-25 19:16","2025-06-28 06:48","2025-06-28 20:17","2025-06-30 20:04","2025-07-02 19:28",
+    "2025-07-05 10:22","2025-07-10 07:19","2025-07-11 10:49","2025-07-14 11:02","2025-07-14 11:06",
+    "2025-07-14 11:58","2025-07-14 16:53","2025-07-14 18:55","2025-07-16 10:27","2025-07-16 16:35",
+    "2025-07-21 12:43","2025-07-21 17:40","2025-07-24 09:04","2025-07-25 07:14","2025-07-26 15:33",
+    "2025-07-28 07:06","2025-07-28 09:10","2025-07-28 13:34","2025-08-02 07:41","2025-08-02 12:46",
+    "2025-08-04 21:30","2025-08-06 13:30","2025-08-15 07:41","2025-08-15 13:19","2025-08-20 12:02",
+    "2025-08-20 18:47","2025-08-21 19:20","2025-08-23 15:07","2025-08-25 14:59","2025-08-27 19:06",
+    "2025-08-29 08:10","2025-08-30 07:41","2025-09-02 13:22","2025-09-07 16:44","2025-09-07 19:44",
+    "2025-09-09 11:39","2025-09-10 21:07","2025-09-15 08:14","2025-09-16 07:27","2025-09-17 07:31",
+    "2025-09-19 20:20","2025-09-22 12:24","2025-09-26 15:28","2025-09-29 19:52","2025-10-01 16:08",
+    "2025-10-02 15:23","2025-10-02 17:57","2025-10-06 15:24","2025-10-26 08:02","2025-10-27 14:42",
+    "2025-10-30 11:38","2025-10-31 21:37","2025-11-02 21:10","2025-11-04 15:10","2025-11-05 11:58",
+    "2025-11-06 06:45","2025-11-09 16:54","2025-11-10 17:16","2025-11-12 17:29","2025-11-13 13:27",
+    "2025-11-13 13:30","2025-11-13 13:31","2025-11-13 13:35","2025-11-13 13:37","2025-11-13 13:48",
+    "2025-11-13 13:57","2025-11-13 14:10","2025-11-13 14:33","2025-11-13 14:35","2025-11-13 14:40",
+    "2025-11-13 15:02","2025-11-13 15:07","2025-11-13 15:27","2025-11-13 15:44","2025-11-13 15:53",
+    "2025-11-13 16:28","2025-11-13 16:42","2025-11-13 17:27","2025-11-13 18:43","2025-11-13 19:00",
+    "2025-11-13 19:30","2025-11-13 19:51","2025-11-13 20:12","2025-11-14 05:31","2025-11-14 06:56",
+    "2025-11-14 07:12","2025-11-14 07:36","2025-11-14 08:32","2025-11-14 08:50","2025-11-14 09:03",
+    "2025-11-14 09:30","2025-11-14 09:49","2025-11-14 10:30","2025-11-14 10:33","2025-11-14 11:14",
+    "2025-11-14 11:29","2025-11-14 13:14","2025-11-14 14:18","2025-11-14 14:43","2025-11-14 15:17",
+    "2025-11-14 15:25","2025-11-14 15:36","2025-11-15 07:56","2025-11-15 09:06","2025-11-15 11:23",
+    "2025-11-15 11:43","2025-11-15 15:19","2025-11-15 18:03","2025-11-15 20:14","2025-11-16 08:29",
+    "2025-11-16 11:07","2025-11-16 16:09","2025-11-16 16:11","2025-11-16 16:15","2025-11-16 18:59",
+    "2025-11-16 20:24","2025-11-16 21:55","2025-11-17 07:50","2025-11-17 09:06","2025-11-17 09:32",
+    "2025-11-17 12:08","2025-11-17 12:14","2025-11-17 14:52","2025-11-17 19:33","2025-11-18 11:17",
+    "2025-11-18 14:50","2025-11-19 09:03","2025-11-22 12:11","2025-11-24 08:05","2025-11-24 08:40",
+    "2025-11-26 15:01","2025-11-27 12:21","2025-11-27 13:46","2025-11-30 19:14","2025-12-01 09:04",
+    "2025-12-02 13:33","2025-12-03 09:04","2025-12-03 11:52","2025-12-04 21:30","2025-12-06 15:43",
+    "2025-12-07 15:26","2025-12-07 19:40","2025-12-08 11:24","2025-12-14 13:23","2025-12-17 15:52",
+    "2025-12-18 13:12","2025-12-18 18:13","2025-12-24 07:54","2025-12-28 11:33","2025-12-29 09:59",
+    "2025-12-31 08:39","2026-01-02 21:39","2026-01-02 22:21","2026-01-03 05:31","2026-01-04 22:23",
+    "2026-01-05 09:31","2026-01-07 11:16","2026-01-08 20:07","2026-01-09 14:54","2026-01-12 09:05",
+    "2026-01-14 17:57","2026-01-16 11:34","2026-01-18 16:50","2026-01-19 20:54","2026-01-22 17:48",
+    "2026-01-25 14:49","2026-01-25 22:47","2026-01-26 18:53","2026-01-26 21:27","2026-01-28 19:16",
+    "2026-01-29 18:57","2026-02-02 11:12","2026-02-08 18:27","2026-02-08 19:32","2026-02-09 10:26",
+    "2026-02-09 18:43","2026-02-12 12:44","2026-02-16 18:42","2026-02-17 08:45","2026-02-17 11:39",
+    "2026-02-17 11:40","2026-02-17 17:33","2026-02-17 19:28","2026-02-17 22:21","2026-02-25 11:52",
+    "2026-02-25 16:35","2026-03-11 16:32","2026-03-12 07:34","2026-03-17 08:15","2026-03-26 10:29",
+    "2026-03-26 17:01","2026-03-26 17:13","2026-03-26 17:18","2026-03-26 18:02","2026-03-26 18:07",
+    "2026-03-26 18:10","2026-03-26 18:31","2026-03-26 19:23","2026-03-26 19:41","2026-03-26 20:18",
+    "2026-03-26 20:45","2026-03-26 22:02","2026-03-27 04:43","2026-03-27 05:00","2026-03-27 06:22",
+    "2026-03-27 06:41","2026-03-27 08:05","2026-03-27 08:24","2026-03-27 08:49","2026-03-27 09:07"
+];
+
+const dates = raw.map(r => r.slice(0, 10));
+const dayCounts = {};
+dates.forEach(d => { dayCounts[d] = (dayCounts[d] || 0) + 1; });
+
+const campaigns = [
+    { id: 1, date: "2025-03-18", win: 3, sendTime: "~14:00" },
+    { id: 2, date: "2025-05-14", win: 3, sendTime: "~08:00" },
+    { id: 3, date: "2025-05-24", win: 7, sendTime: "~08:00" },
+    { id: 4, date: "2025-07-14", win: 5, sendTime: "~11:00" },
+    { id: 5, date: "2025-11-13", win: 7, sendTime: "~13:00" },
+    { id: 6, date: "2026-02-17", win: 3, sendTime: "~08:00" },
+    { id: 7, date: "2026-03-26", win: 4, sendTime: "~17:00", live: true },
+];
+
+// Calc campaign stats
+campaigns.forEach(c => {
+    const s = new Date(c.date);
+    let total = 0, peakDay = c.date, peakN = 0;
+    c.days = [];
+    for (let i = 0; i < c.win; i++) {
+        const d = new Date(s); d.setDate(d.getDate() + i);
+        const k = d.toISOString().slice(0, 10);
+        const n = dayCounts[k] || 0;
+        total += n;
+        c.days.push({ date: k, count: n, dayNum: i });
+        if (n > peakN) { peakN = n; peakDay = k; }
+    }
+    c.total = total;
+    c.peakDay = peakDay;
+    c.peakN = peakN;
+});
+
+const total = dates.length;
+const campTotal = campaigns.reduce((s, c) => s + c.total, 0);
+const organicTotal = total - campTotal;
+const best = campaigns.reduce((b, c) => c.total > b.total ? c : b);
+const c7 = campaigns[6];
+
+// ── KPIs ──
+function kpi(el, label, value, detail, trend) {
+    el.innerHTML = `<div class="kpi-label">${label}</div><div class="kpi-value">${value}</div><div class="kpi-detail">${detail}</div>${trend ? '<div class="kpi-trend up">' + trend + '</div>' : ''}`;
+}
+kpi(document.getElementById('kpiTotal'), 'Tilmeldinger i alt', total, 'via Logby-formular');
+kpi(document.getElementById('kpiCampaigns'), 'E-mails sendt', campaigns.length, 'identificerede kampagner');
+kpi(document.getElementById('kpiAvg'), 'Gns. pr. kampagne', Math.round(campTotal / campaigns.length), 'tilmeldinger');
+kpi(document.getElementById('kpiBest'), 'Bedste kampagne', best.total, new Date(best.date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' }));
+kpi(document.getElementById('kpiLive'), 'Kampagne 7 (live)', c7.total + '+', 'og tæller...', '&#9650; sendt i går');
+
+// ── Insight ──
+document.getElementById('insightText').innerHTML = `
+    De <strong>2 største kampagner</strong> (maj '25 og nov '25) har leveret <strong>${campaigns[2].total + campaigns[4].total} tilmeldinger</strong> — det er <strong>${Math.round((campaigns[2].total + campaigns[4].total) / total * 100)}%</strong> af alle tilmeldinger.
+    Kampagne 7, sendt i går kl. ~17:00, har allerede givet <strong>${c7.total} tilmeldinger på under 24 timer</strong>.
+    Mellem kampagnerne ses et stabilt organisk dryp på <strong>~1-2 tilmeldinger pr. uge</strong>.
+`;
+
+// ── Helpers ──
+function getMonday(d) {
+    const dt = new Date(d), day = dt.getDay(), diff = dt.getDate() - day + (day === 0 ? -6 : 1);
+    dt.setDate(diff); return dt.toISOString().slice(0, 10);
+}
+function isInCampaign(weekStart) {
+    const ws = new Date(weekStart), we = new Date(ws); we.setDate(we.getDate() + 6);
+    return campaigns.find(c => {
+        const cs = new Date(c.date), ce = new Date(cs); ce.setDate(ce.getDate() + c.win - 1);
+        return cs <= we && ce >= ws;
+    });
+}
+
+// ── Weekly data ──
+const weekCounts = {};
+dates.forEach(d => { const w = getMonday(d); weekCounts[w] = (weekCounts[w] || 0) + 1; });
+const allDaysSorted = Object.keys(dayCounts).sort();
+const firstMon = getMonday(allDaysSorted[0]), lastMon = getMonday(allDaysSorted[allDaysSorted.length - 1]);
+const weeks = [];
+for (let d = new Date(firstMon); d <= new Date(lastMon); d.setDate(d.getDate() + 7)) {
+    const k = d.toISOString().slice(0, 10);
+    weeks.push({ week: k, count: weekCounts[k] || 0 });
+}
+
+// Chart defaults
+Chart.defaults.font.family = 'DM Sans';
+
+// ════════════════════════════════════════════
+// MAIN CHART
+// ════════════════════════════════════════════
+new Chart(document.getElementById('mainChart'), {
+    type: 'bar',
+    data: {
+        labels: weeks.map(w => w.week),
+        datasets: [{
+            data: weeks.map(w => w.count),
+            backgroundColor: weeks.map(w => {
+                const c = isInCampaign(w.week);
+                if (!c) return 'rgba(115,208,231,0.3)';
+                if (c.live) return 'rgba(16,185,129,0.8)';
+                return c.total > 30 ? 'rgba(232,68,58,0.75)' : 'rgba(3,59,140,0.75)';
+            }),
+            hoverBackgroundColor: weeks.map(w => {
+                const c = isInCampaign(w.week);
+                if (!c) return 'rgba(115,208,231,0.5)';
+                if (c.live) return 'rgba(16,185,129,1)';
+                return c.total > 30 ? 'rgba(232,68,58,0.9)' : 'rgba(3,59,140,0.9)';
+            }),
+            borderRadius: 5,
+            borderSkipped: false,
+            barPercentage: 0.8,
+            categoryPercentage: 0.88
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#101D2F', cornerRadius: 10,
+                titleFont: { weight: '600', size: 13 }, bodyFont: { size: 12 },
+                padding: 14, displayColors: false,
+                callbacks: {
+                    title(items) {
+                        const w = items[0].label, end = new Date(w); end.setDate(end.getDate() + 6);
+                        const o = { day: 'numeric', month: 'short' };
+                        return new Date(w).toLocaleDateString('da-DK', o) + ' – ' + end.toLocaleDateString('da-DK', o);
+                    },
+                    afterTitle(items) {
+                        const c = isInCampaign(items[0].label);
+                        return c ? (c.live ? '🟢 E-mail ' + c.id + ' (LIVE)' : '📧 E-mail ' + c.id) : '';
+                    },
+                    label: item => item.raw + ' tilmeldinger'
+                }
+            }
+        },
+        scales: {
+            x: {
+                grid: { display: false }, border: { display: false },
+                ticks: {
+                    maxTicksLimit: 16, maxRotation: 0, font: { size: 11, weight: '500' }, color: '#94a3b8',
+                    callback(val) {
+                        const l = this.getLabelForValue(val), d = new Date(l);
+                        return d.getDate() <= 7 ? d.toLocaleDateString('da-DK', { month: 'short' }) + ' \'' + d.getFullYear().toString().slice(2) : '';
+                    }
+                }
+            },
+            y: {
+                beginAtZero: true, border: { display: false },
+                grid: { color: '#f1f5f9', drawTicks: false },
+                ticks: { stepSize: 10, font: { size: 11 }, color: '#94a3b8', padding: 8 }
+            }
+        }
+    },
+    plugins: [{
+        afterDraw(chart) {
+            const { ctx, scales: { x, y } } = chart, labels = chart.data.labels;
+            campaigns.forEach(c => {
+                let idx = -1;
+                for (let i = 0; i < labels.length; i++) {
+                    const ws = new Date(labels[i]), we = new Date(ws); we.setDate(we.getDate() + 6);
+                    if (new Date(c.date) >= ws && new Date(c.date) <= we) { idx = i; break; }
+                }
+                if (idx === -1) return;
+                const xP = x.getPixelForValue(idx);
+                if (xP < x.left || xP > x.right) return;
+                ctx.save();
+                ctx.strokeStyle = c.live ? '#10b981' : '#E8443A';
+                ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+                ctx.beginPath(); ctx.moveTo(xP, y.top + 26); ctx.lineTo(xP, y.bottom); ctx.stroke();
+                ctx.setLineDash([]);
+                const txt = c.live ? '🟢 ' + c.id : '📧 ' + c.id;
+                ctx.font = '700 10px DM Sans';
+                const tw = ctx.measureText(txt).width + 14, th = 22, bx = xP - tw / 2, by = y.top + 2;
+                ctx.fillStyle = c.live ? '#10b981' : '#E8443A';
+                ctx.beginPath(); ctx.roundRect(bx, by, tw, th, 5); ctx.fill();
+                ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(txt, xP, by + th / 2);
+                ctx.restore();
+            });
+        }
+    }]
+});
+
+// ════════════════════════════════════════════
+// CAMPAIGN TABLE
+// ════════════════════════════════════════════
+const maxT = Math.max(...campaigns.map(c => c.total));
+const tbody = document.getElementById('tblBody');
+campaigns.forEach(c => {
+    const df = new Date(c.date).toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric' });
+    const wd = new Date(c.date).toLocaleDateString('da-DK', { weekday: 'long' });
+    const pf = new Date(c.peakDay).toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' });
+    const pct = Math.round(c.total / maxT * 100);
+    const cls = c.live ? 'live' : (c.total > 30 ? 'hot' : '');
+    const tag = c.live ? '<span class="live-tag">LIVE</span>' : '';
+    tbody.innerHTML += `<tr>
+        <td><span class="num-badge ${cls}">${c.id}</span></td>
+        <td><div class="td-main">${df} ${tag}</div><div class="td-sub">${wd} kl. ${c.sendTime}</div></td>
+        <td><div class="td-main">${pf}</div><div class="td-sub">${c.peakN} tilm.</div></td>
+        <td>${c.live ? c.win + 'd+' : c.win + ' dage'}</td>
+        <td><div class="mini-bar"><div class="mini-bar-track"><div class="mini-bar-fill ${cls}" style="width:${pct}%"></div></div><span class="mini-bar-val">${c.total}${c.live ? '+' : ''}</span></div></td>
+    </tr>`;
+});
+
+// ════════════════════════════════════════════
+// PIE CHART
+// ════════════════════════════════════════════
+new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Kampagnetilmeldinger (' + campTotal + ')', 'Organisk (' + organicTotal + ')'],
+        datasets: [{ data: [campTotal, organicTotal], backgroundColor: ['#033B8C', 'rgba(115,208,231,0.4)'], borderWidth: 0, spacing: 4, borderRadius: 5 }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false, cutout: '68%',
+        plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 11, weight: '500' }, usePointStyle: true, pointStyle: 'rectRounded', padding: 16, color: '#475569' } },
+            tooltip: { backgroundColor: '#101D2F', cornerRadius: 8, padding: 12,
+                callbacks: { label: i => ' ' + i.label + ' (' + Math.round(i.raw / total * 100) + '%)' }
+            }
+        }
+    },
+    plugins: [{ beforeDraw(chart) {
+        const { ctx } = chart, meta = chart.getDatasetMeta(0);
+        if (!meta.data[0]) return;
+        const cx = meta.data[0].x, cy = meta.data[0].y;
+        ctx.save();
+        ctx.font = '800 32px DM Sans'; ctx.fillStyle = '#101D2F'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(Math.round(campTotal / total * 100) + '%', cx, cy - 8);
+        ctx.font = '500 11px DM Sans'; ctx.fillStyle = '#94a3b8';
+        ctx.fillText('fra kampagner', cx, cy + 16);
+        ctx.restore();
+    }}]
+});
+
+// ════════════════════════════════════════════
+// RESPONSE CURVE
+// ════════════════════════════════════════════
+const respColors = [
+    { border: '#cbd5e1', bg: 'rgba(203,213,225,0.1)' },
+    { border: '#93c5fd', bg: 'rgba(147,197,253,0.1)' },
+    { border: '#E8443A', bg: 'rgba(232,68,58,0.08)' },
+    { border: '#033B8C', bg: 'rgba(3,59,140,0.08)' },
+    { border: '#E8443A', bg: 'rgba(232,68,58,0.08)' },
+    { border: '#93c5fd', bg: 'rgba(147,197,253,0.1)' },
+    { border: '#10b981', bg: 'rgba(16,185,129,0.08)' },
+];
+const respDS = campaigns.filter(c => c.total >= 4).map((c, i) => {
+    const data = []; for (let d = 0; d < 7; d++) data.push(c.days[d] ? c.days[d].count : 0);
+    const col = respColors[c.id - 1] || respColors[0];
+    const lbl = new Date(c.date).toLocaleDateString('da-DK', { month: 'short', year: '2-digit' });
+    return {
+        label: lbl + ' (' + c.total + ')',
+        data, borderColor: col.border, backgroundColor: col.bg,
+        borderWidth: c.total > 30 || c.live ? 3 : 1.5,
+        pointRadius: c.total > 30 || c.live ? 4 : 2,
+        pointBackgroundColor: col.border, pointBorderColor: '#fff', pointBorderWidth: 1.5,
+        tension: 0.35, fill: true, order: c.total > 30 || c.live ? 0 : 1
+    };
+});
+new Chart(document.getElementById('responseChart'), {
+    type: 'line',
+    data: { labels: ['Dag 0','Dag 1','Dag 2','Dag 3','Dag 4','Dag 5','Dag 6'], datasets: respDS },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 10 }, usePointStyle: true, pointStyle: 'circle', padding: 10, color: '#475569' } },
+            tooltip: { backgroundColor: '#101D2F', cornerRadius: 8, padding: 10 }
+        },
+        scales: {
+            x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10 }, color: '#94a3b8' } },
+            y: { beginAtZero: true, border: { display: false }, grid: { color: '#f1f5f9', drawTicks: false }, ticks: { font: { size: 10 }, color: '#94a3b8', padding: 6 } }
+        }
+    }
+});
+
+// ════════════════════════════════════════════
+// RANK CHART (horizontal bar)
+// ════════════════════════════════════════════
+const sorted = [...campaigns].sort((a, b) => b.total - a.total);
+new Chart(document.getElementById('rankChart'), {
+    type: 'bar',
+    data: {
+        labels: sorted.map(c => {
+            const d = new Date(c.date).toLocaleDateString('da-DK', { month: 'short', year: '2-digit' });
+            return '#' + c.id + '  ' + d;
+        }),
+        datasets: [{
+            data: sorted.map(c => c.total),
+            backgroundColor: sorted.map(c => c.live ? '#10b981' : (c.total > 30 ? '#E8443A' : '#033B8C')),
+            borderRadius: 6, borderSkipped: false, barPercentage: 0.65
+        }]
+    },
+    options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: { backgroundColor: '#101D2F', cornerRadius: 8, padding: 12, callbacks: { label: i => i.raw + ' tilmeldinger' } }
+        },
+        scales: {
+            x: { beginAtZero: true, border: { display: false }, grid: { color: '#f1f5f9', drawTicks: false }, ticks: { font: { size: 10 }, color: '#94a3b8' } },
+            y: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 11, weight: '600' }, color: '#334155' } }
+        }
+    },
+    plugins: [{
+        afterDraw(chart) {
+            const { ctx } = chart;
+            chart.getDatasetMeta(0).data.forEach((bar, i) => {
+                ctx.save();
+                ctx.font = '700 12px DM Sans'; ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                const val = sorted[i].total;
+                if (bar.width > 40) ctx.fillText(val + (sorted[i].live ? '+' : ''), bar.x - bar.width + 10, bar.y);
+                ctx.restore();
+            });
+        }
+    }]
+});
+
+// ════════════════════════════════════════════
+// CAMPAIGN 7 LIVE DETAIL (daily bars)
+// ════════════════════════════════════════════
+const c7days = [
+    { label: '26. mar\n(fra kl. 17)', count: dayCounts['2026-03-26'] || 0 },
+    { label: '27. mar\n(i dag)', count: dayCounts['2026-03-27'] || 0 },
+    { label: '28. mar', count: 0 },
+    { label: '29. mar', count: 0 },
+];
+new Chart(document.getElementById('liveChart'), {
+    type: 'bar',
+    data: {
+        labels: c7days.map(d => d.label),
+        datasets: [{
+            data: c7days.map(d => d.count),
+            backgroundColor: c7days.map((d, i) => i < 2 ? 'rgba(16,185,129,0.8)' : 'rgba(16,185,129,0.15)'),
+            borderColor: c7days.map((d, i) => i < 2 ? '#10b981' : 'rgba(16,185,129,0.3)'),
+            borderWidth: 2,
+            borderRadius: 8,
+            borderSkipped: false,
+            barPercentage: 0.5
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: { backgroundColor: '#101D2F', cornerRadius: 8, padding: 12, callbacks: { label: i => i.raw + ' tilmeldinger' } }
+        },
+        scales: {
+            x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 12, weight: '600' }, color: '#334155' } },
+            y: { beginAtZero: true, border: { display: false }, grid: { color: '#f1f5f9', drawTicks: false }, ticks: { stepSize: 5, font: { size: 11 }, color: '#94a3b8', padding: 8 } }
+        }
+    },
+    plugins: [{
+        afterDraw(chart) {
+            const { ctx } = chart;
+            chart.getDatasetMeta(0).data.forEach((bar, i) => {
+                if (c7days[i].count === 0) return;
+                ctx.save();
+                ctx.font = '800 16px DM Sans'; ctx.fillStyle = '#101D2F'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+                ctx.fillText(c7days[i].count, bar.x, bar.y - 6);
+                ctx.restore();
+            });
+        }
+    }]
+});
+
+// ════════════════════════════════════════════
+// CAMPAIGN 7 HOURLY CHART
+// ════════════════════════════════════════════
+const c7raw = raw.filter(r => r.startsWith('2026-03-26') || r.startsWith('2026-03-27'));
+const hourBuckets = {};
+c7raw.forEach(r => {
+    const d = r.slice(0, 10), h = parseInt(r.slice(11, 13));
+    const label = (d === '2026-03-26' ? '26/' : '27/') + String(h).padStart(2, '0') + ':00';
+    hourBuckets[label] = (hourBuckets[label] || 0) + 1;
+});
+
+// Build full hourly timeline from 26/10:00 to 27/10:00
+const hourLabels = [];
+for (let h = 10; h < 24; h++) hourLabels.push('26/' + String(h).padStart(2, '0') + ':00');
+for (let h = 0; h <= 10; h++) hourLabels.push('27/' + String(h).padStart(2, '0') + ':00');
+
+const hourData = hourLabels.map(l => hourBuckets[l] || 0);
+const emailSentIdx = hourLabels.indexOf('26/17:00');
+
+new Chart(document.getElementById('hourlyChart'), {
+    type: 'bar',
+    data: {
+        labels: hourLabels.map(l => l.slice(3)),
+        datasets: [{
+            data: hourData,
+            backgroundColor: hourData.map((v, i) => {
+                if (i < emailSentIdx) return 'rgba(148,163,184,0.2)';
+                return v > 0 ? 'rgba(16,185,129,0.75)' : 'rgba(16,185,129,0.1)';
+            }),
+            borderRadius: 4, borderSkipped: false, barPercentage: 0.7, categoryPercentage: 0.9
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#101D2F', cornerRadius: 8, padding: 12, displayColors: false,
+                callbacks: {
+                    title: items => hourLabels[items[0].dataIndex].replace('26/', '26. mar kl. ').replace('27/', '27. mar kl. '),
+                    label: i => i.raw + ' tilmeldinger'
+                }
+            }
+        },
+        scales: {
+            x: {
+                grid: { display: false }, border: { display: false },
+                ticks: { font: { size: 10 }, color: '#94a3b8', maxRotation: 45 }
+            },
+            y: {
+                beginAtZero: true, border: { display: false },
+                grid: { color: '#f1f5f9', drawTicks: false },
+                ticks: { stepSize: 1, font: { size: 10 }, color: '#94a3b8', padding: 6 }
+            }
+        }
+    },
+    plugins: [{
+        afterDraw(chart) {
+            if (emailSentIdx === -1) return;
+            const { ctx, scales: { x, y } } = chart;
+            const xP = x.getPixelForValue(emailSentIdx);
+            ctx.save();
+            ctx.strokeStyle = '#E8443A'; ctx.lineWidth = 2; ctx.setLineDash([5, 3]);
+            ctx.beginPath(); ctx.moveTo(xP, y.top + 24); ctx.lineTo(xP, y.bottom); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#E8443A'; ctx.font = '700 10px DM Sans';
+            const tw = ctx.measureText('📧 Sendt!').width + 12, th = 20;
+            ctx.beginPath(); ctx.roundRect(xP - tw / 2, y.top + 2, tw, th, 4); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('📧 Sendt!', xP, y.top + 12);
+            ctx.restore();
+        }
+    }]
+});
+</script>
+</body>
+</html>
