@@ -118,7 +118,7 @@
 
 <div class="topbar">
     <div class="topbar-left"><div class="topbar-dot"></div><span class="topbar-brand">Altid Energi</span></div>
-    <div class="topbar-right">Visma Logby &middot; Partner&shy;analyse &middot; 27. marts 2026</div>
+    <div class="topbar-right">Visma Logby &middot; Partner&shy;analyse &middot; 29. marts 2026</div>
 </div>
 
 <div class="page">
@@ -207,7 +207,7 @@
 
     <div class="page-footer">
         Analyse baseret på tilmeldingsmønstre. E-maildatoer er estimerede ud fra klynger af tilmeldinger.<br>
-        Altid Energi &middot; Visma Logby Partneranalyse &middot; Genereret 27. marts 2026
+        Altid Energi &middot; Visma Logby Partneranalyse &middot; Genereret 29. marts 2026
     </div>
 </div>
 
@@ -280,7 +280,8 @@ const raw = [
     "2026-03-26 17:01","2026-03-26 17:13","2026-03-26 17:18","2026-03-26 18:02","2026-03-26 18:07",
     "2026-03-26 18:10","2026-03-26 18:31","2026-03-26 19:23","2026-03-26 19:41","2026-03-26 20:18",
     "2026-03-26 20:45","2026-03-26 22:02","2026-03-27 04:43","2026-03-27 05:00","2026-03-27 06:22",
-    "2026-03-27 06:41","2026-03-27 08:05","2026-03-27 08:24","2026-03-27 08:49","2026-03-27 09:07"
+    "2026-03-27 06:41","2026-03-27 08:05","2026-03-27 08:24","2026-03-27 08:49","2026-03-27 09:07",
+    "2026-03-27 12:58","2026-03-27 16:00","2026-03-28 18:57","2026-03-28 19:14"
 ];
 
 const dates = raw.map(r => r.slice(0, 10));
@@ -329,12 +330,12 @@ kpi(document.getElementById('kpiTotal'), 'Tilmeldinger i alt', total, 'via Logby
 kpi(document.getElementById('kpiCampaigns'), 'E-mails sendt', campaigns.length, 'identificerede kampagner');
 kpi(document.getElementById('kpiAvg'), 'Gns. pr. kampagne', Math.round(campTotal / campaigns.length), 'tilmeldinger');
 kpi(document.getElementById('kpiBest'), 'Bedste kampagne', best.total, new Date(best.date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' }));
-kpi(document.getElementById('kpiLive'), 'Kampagne 7 (live)', c7.total + '+', 'og tæller...', '&#9650; sendt i går');
+kpi(document.getElementById('kpiLive'), 'Kampagne 7 (live)', c7.total + '+', 'og tæller...', '&#9650; sendt 26. mar');
 
 // ── Insight ──
 document.getElementById('insightText').innerHTML = `
     De <strong>2 største kampagner</strong> (maj '25 og nov '25) har leveret <strong>${campaigns[2].total + campaigns[4].total} tilmeldinger</strong> — det er <strong>${Math.round((campaigns[2].total + campaigns[4].total) / total * 100)}%</strong> af alle tilmeldinger.
-    Kampagne 7, sendt i går kl. ~17:00, har allerede givet <strong>${c7.total} tilmeldinger på under 24 timer</strong>.
+    Kampagne 7, sendt 26. mar kl. ~17:00, har allerede givet <strong>${c7.total} tilmeldinger på 3 dage</strong>.
     Mellem kampagnerne ses et stabilt organisk dryp på <strong>~1-2 tilmeldinger pr. uge</strong>.
 `;
 
@@ -603,9 +604,9 @@ new Chart(document.getElementById('rankChart'), {
 // ════════════════════════════════════════════
 const c7days = [
     { label: '26. mar\n(fra kl. 17)', count: dayCounts['2026-03-26'] || 0 },
-    { label: '27. mar\n(i dag)', count: dayCounts['2026-03-27'] || 0 },
-    { label: '28. mar', count: 0 },
-    { label: '29. mar', count: 0 },
+    { label: '27. mar', count: dayCounts['2026-03-27'] || 0 },
+    { label: '28. mar', count: dayCounts['2026-03-28'] || 0 },
+    { label: '29. mar\n(i dag)', count: dayCounts['2026-03-29'] || 0 },
 ];
 new Chart(document.getElementById('liveChart'), {
     type: 'bar',
@@ -649,18 +650,20 @@ new Chart(document.getElementById('liveChart'), {
 // ════════════════════════════════════════════
 // CAMPAIGN 7 HOURLY CHART
 // ════════════════════════════════════════════
-const c7raw = raw.filter(r => r.startsWith('2026-03-26') || r.startsWith('2026-03-27'));
+const c7raw = raw.filter(r => r.startsWith('2026-03-26') || r.startsWith('2026-03-27') || r.startsWith('2026-03-28'));
 const hourBuckets = {};
 c7raw.forEach(r => {
     const d = r.slice(0, 10), h = parseInt(r.slice(11, 13));
-    const label = (d === '2026-03-26' ? '26/' : '27/') + String(h).padStart(2, '0') + ':00';
+    const dayLabel = d === '2026-03-26' ? '26' : d === '2026-03-27' ? '27' : '28';
+    const label = dayLabel + '/' + String(h).padStart(2, '0') + ':00';
     hourBuckets[label] = (hourBuckets[label] || 0) + 1;
 });
 
-// Build full hourly timeline from 26/10:00 to 27/10:00
+// Build full hourly timeline from 26/10:00 to 28/23:00
 const hourLabels = [];
 for (let h = 10; h < 24; h++) hourLabels.push('26/' + String(h).padStart(2, '0') + ':00');
-for (let h = 0; h <= 10; h++) hourLabels.push('27/' + String(h).padStart(2, '0') + ':00');
+for (let h = 0; h < 24; h++) hourLabels.push('27/' + String(h).padStart(2, '0') + ':00');
+for (let h = 0; h < 24; h++) hourLabels.push('28/' + String(h).padStart(2, '0') + ':00');
 
 const hourData = hourLabels.map(l => hourBuckets[l] || 0);
 const emailSentIdx = hourLabels.indexOf('26/17:00');
@@ -685,7 +688,7 @@ new Chart(document.getElementById('hourlyChart'), {
             tooltip: {
                 backgroundColor: '#101D2F', cornerRadius: 8, padding: 12, displayColors: false,
                 callbacks: {
-                    title: items => hourLabels[items[0].dataIndex].replace('26/', '26. mar kl. ').replace('27/', '27. mar kl. '),
+                    title: items => hourLabels[items[0].dataIndex].replace('26/', '26. mar kl. ').replace('27/', '27. mar kl. ').replace('28/', '28. mar kl. '),
                     label: i => i.raw + ' tilmeldinger'
                 }
             }
