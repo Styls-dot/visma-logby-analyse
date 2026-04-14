@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kreativ Creator — Altid Energi</title>
+    <link rel="icon" href="/assets/logo-color.png" type="image/png">
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="app-header">
+        <div class="app-title">
+            <img src="/assets/logo-color.png" alt="Altid Energi">
+            Kreativ Creator
+        </div>
+        <div class="header-actions">
+            <button id="format-toggle" class="format-btn" data-format="feed">Feed 1080x1080</button>
+            <button id="export-btn" class="export-btn">Eksportér PNG</button>
+            <button id="batch-btn" class="batch-btn">Batch eksport (ZIP)</button>
+        </div>
+    </header>
+
+    <!-- MAIN LAYOUT -->
+    <div class="app-layout">
+
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="sidebar"></aside>
+
+        <!-- PREVIEW + VARIANTS -->
+        <main class="main-area">
+            <div class="preview-area">
+                <div id="preview-wrapper" class="preview-wrapper">
+                    <div id="preview-canvas"></div>
+                </div>
+            </div>
+            <div id="brand-validation"></div>
+            <div id="variant-panel"></div>
+            <div class="footer-bar">
+                <div class="zoom-control">
+                    <span>Zoom:</span>
+                    <input type="range" id="zoom-slider" min="25" max="200" value="100" step="5">
+                    <span id="zoom-label">100%</span>
+                </div>
+                <div id="dimension-label">1080 x 1080px</div>
+            </div>
+        </main>
+
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>

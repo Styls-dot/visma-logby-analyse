@@ -1,0 +1,115 @@
+/* ============================================
+   BASE AD STYLES — Altid Energi Kreativ Creator
+   Extracted from fb-kreativer-v5-clean.html
+   ============================================ */
+
+.ad {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.ad.format-feed {
+    width: 540px;
+    height: 540px;
+}
+
+.ad.format-story {
+    width: 540px;
+    height: 960px;
+}
+
+/* Background colors */
+.bg-sage { background: #C8D5BE; }
+.bg-navy { background: #101D2F; }
+.bg-offwhite { background: #F3F1EC; }
+.bg-teal-light { background: #D3E5E8; }
+.bg-white { background: #FFFFFF; }
+.bg-blue { background: #033B8C; }
+
+/* Logo — always top-right */
+.ad .logo {
+    position: absolute;
+    top: 28px;
+    right: 28px;
+    z-index: 5;
+}
+.ad .logo img {
+    height: 48px;
+    display: block;
+}
+/* White logo on dark backgrounds — handled via src swap in templates,
+   no CSS filter needed (html2canvas doesn't support filters) */
+
+/* Text colors */
+.c-navy { color: #101D2F; }
+.c-white { color: #fff; }
+.c-teal { color: #73D0E7; }
+.c-blue { color: #033B8C; }
+.c-yellow { color: #FFD15C; }
+.c-muted-sage { color: #7A8A70; }
+.c-muted-white { color: rgba(255,255,255,0.45); }
+.c-muted-navy { color: rgba(16,29,47,0.4); }
+
+/* Utility */
+.strike { text-decoration: line-through; text-decoration-thickness: 2px; }
+.highlight-sage {
+    background: rgba(160,190,140,0.35);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+.highlight-teal {
+    background: rgba(115,208,231,0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+.teal-line {
+    width: 32px;
+    height: 3px;
+    background: #73D0E7;
+    border-radius: 2px;
+}
+
+/* Eyebrow text */
+.ad-eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+/* Source text */
+.ad-source {
+    font-size: 14px;
+}
+
+/* Pill / badge */
+.ad-pill {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 99px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* CTA button */
+.ad-cta {
+    display: inline-block;
+    background: #73D0E7;
+    color: #fff;
+    padding: 12px 28px;
+    border-radius: 99px;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* Story format adjustments */
+.ad.format-story .logo img {
+    height: 56px;
+}
+.ad.format-story .ad-eyebrow {
+    font-size: 14px;
+}
