@@ -67,4 +67,56 @@ describe("stromligning client", () => {
     });
     await expect(client.getCompanies({ yearlyConsumption: 4000, region: "DK1" })).rejects.toThrow();
   });
+
+  it("valideringstest: kaster ved malformateret svar (manglende products)", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse([
+        {
+          slug: "bad-company",
+          name: "Bad Company",
+          // products field is missing
+        },
+      ]),
+    );
+    const client = createStromligningClient({
+      baseUrl: "https://stromligning.dk",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    await expect(client.getCompanies({ yearlyConsumption: 4000, region: "DK1" })).rejects.toThrow(
+      /returnerede uventet format/,
+    );
+  });
+
+  it("valideringstest: product med null tal-felt bliver til null uden at kaste", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse([
+        {
+          slug: "test-energi",
+          name: "Test Energi",
+          products: [
+            {
+              id: "test_prod_1",
+              name: "Test Product",
+              productType: "fixed",
+              totalCost: null, // explicit null
+              subscriptionMonthly: undefined, // missing
+              feesMonthly: "invalid", // invalid type, caught and becomes null
+              consumptionSurcharge: 10.5,
+              fixedPrice: null,
+              creationFee: 0,
+            },
+          ],
+        },
+      ]),
+    );
+    const client = createStromligningClient({
+      baseUrl: "https://stromligning.dk",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    const companies = await client.getCompanies({ yearlyConsumption: 4000, region: "DK1" });
+    expect(companies[0]!.products[0]!.totalCost).toBe(null);
+    expect(companies[0]!.products[0]!.subscriptionMonthly).toBe(null);
+    expect(companies[0]!.products[0]!.feesMonthly).toBe(null);
+    expect(companies[0]!.products[0]!.consumptionSurcharge).toBe(10.5);
+  });
 });
