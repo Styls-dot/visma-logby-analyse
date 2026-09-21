@@ -39,7 +39,7 @@ describe("stromligning client", () => {
     const companies = await client.getCompanies({ yearlyConsumption: 4000, region: "DK1" });
 
     expect(fetchImpl).toHaveBeenCalledOnce();
-    const calledUrl = String(fetchImpl.mock.calls[0]![0]);
+    const calledUrl = String((fetchImpl.mock.calls as unknown[][])[0]![0]);
     expect(calledUrl).toContain("/api/companies");
     expect(calledUrl).toContain("yearlyConsumption=4000");
     expect(calledUrl).toContain("region=DK1");
@@ -56,7 +56,7 @@ describe("stromligning client", () => {
     });
     const res = await client.findSupplierByPostalCode(4320);
     expect(res[0]!.priceArea).toBe("DK1");
-    expect(String(fetchImpl.mock.calls[0]![0])).toContain("postalCode=4320");
+    expect(String((fetchImpl.mock.calls as unknown[][])[0]![0])).toContain("postalCode=4320");
   });
 
   it("kaster ved ikke-2xx", async () => {

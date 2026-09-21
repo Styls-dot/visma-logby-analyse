@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { SlCompany, SlSupplier, PriceArea } from "./types.js";
+import type { SlCompany, SlProduct, SlSupplier, PriceArea } from "./types.js";
 
 interface ClientOpts {
   baseUrl: string;
@@ -12,35 +12,63 @@ export function createStromligningClient(opts: ClientOpts) {
   const headers: Record<string, string> = { accept: "application/json" };
   if (opts.apiKey) headers["Authorization"] = `Bearer ${opts.apiKey}`;
 
-  // Zod schemas for validation
-  const productSchema = z.object({
+  // Zod schemas for validation - strict on structure, lenient on types
+  // Numeric fields accept number/null/undefined; we handle type coercion in normalization
+  const productValidationSchema = z.object({
     id: z.string(),
     name: z.string(),
-    productType: z.string().default(""),
-    totalCost: z.number().nullable().catch(null).default(null),
-    subscriptionMonthly: z.number().nullable().catch(null).default(null),
-    feesMonthly: z.number().nullable().catch(null).default(null),
-    consumptionSurcharge: z.number().nullable().catch(null).default(null),
-    fixedPrice: z.number().nullable().catch(null).default(null),
-    creationFee: z.number().nullable().catch(null).default(null),
+    productType: z.any(),
+    totalCost: z.any(),
+    subscriptionMonthly: z.any(),
+    feesMonthly: z.any(),
+    consumptionSurcharge: z.any(),
+    fixedPrice: z.any(),
+    creationFee: z.any(),
   });
 
-  const companySchema = z.object({
+  const companyValidationSchema = z.object({
     slug: z.string(),
     name: z.string(),
-    products: z.array(productSchema),
+    products: z.array(productValidationSchema),
   });
 
-  const companiesResponseSchema = z.array(companySchema);
+  // Normalization function to convert validated data to proper types
+  const normalizeCompanies = (data: unknown[]): SlCompany[] => {
+    return (data as unknown[]).map((company: unknown) => {
+      const c = company as Record<string, unknown>;
+      return {
+        slug: c.slug as string,
+        name: c.name as string,
+        products: Array.isArray(c.products)
+          ? c.products.map((p: unknown) => {
+              const prod = p as Record<string, unknown>;
+              return {
+                id: prod.id as string,
+                name: prod.name as string,
+                productType: typeof prod.productType === "string" ? prod.productType : "",
+                totalCost: typeof prod.totalCost === "number" ? prod.totalCost : null,
+                subscriptionMonthly: typeof prod.subscriptionMonthly === "number" ? prod.subscriptionMonthly : null,
+                feesMonthly: typeof prod.feesMonthly === "number" ? prod.feesMonthly : null,
+                consumptionSurcharge: typeof prod.consumptionSurcharge === "number" ? prod.consumptionSurcharge : null,
+                fixedPrice: typeof prod.fixedPrice === "number" ? prod.fixedPrice : null,
+                creationFee: typeof prod.creationFee === "number" ? prod.creationFee : null,
+              } as SlProduct;
+            })
+          : [],
+      } as SlCompany;
+    });
+  };
 
-  const supplierSchema = z.object({
+  const companiesResponseSchema = z.array(companyValidationSchema).transform(normalizeCompanies) as z.ZodType<SlCompany[]>;
+
+  const supplierValidationSchema = z.object({
     id: z.string(),
     name: z.string(),
     companyName: z.string(),
-    priceArea: z.string(),
+    priceArea: z.enum(["DK1", "DK2"]),
   });
 
-  const suppliersResponseSchema = z.array(supplierSchema);
+  const suppliersResponseSchema = z.array(supplierValidationSchema);
 
   async function getJson<T>(
     path: string,
