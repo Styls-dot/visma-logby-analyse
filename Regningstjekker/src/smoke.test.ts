@@ -1,0 +1,8 @@
+// src/smoke.test.ts
+import { describe, it, expect } from "vitest";
+
+describe("smoke", () => {
+  it("kører testopsætningen", () => {
+    expect(1 + 1).toBe(2);
+  });
+});
