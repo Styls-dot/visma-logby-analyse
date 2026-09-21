@@ -24,10 +24,17 @@ function mapRow(r: Record<string, unknown>): Submission {
 
 const COLS = "id, created_at, status, file_path, file_mime, result, delete_after";
 
-export async function createSubmission(db: SupabaseClient, input: { status?: string }): Promise<Submission> {
+export async function createSubmission(
+  db: SupabaseClient,
+  input: { status?: string; retentionDays?: number },
+): Promise<Submission> {
+  const row: Record<string, unknown> = { status: input.status ?? "received" };
+  if (input.retentionDays !== undefined) {
+    row.delete_after = new Date(Date.now() + input.retentionDays * 24 * 60 * 60 * 1000).toISOString();
+  }
   const { data, error } = await db
     .from("submissions")
-    .insert({ status: input.status ?? "received" })
+    .insert(row)
     .select(COLS)
     .single();
   if (error || !data) throw new Error(`createSubmission fejlede: ${error?.message}`);

@@ -38,4 +38,14 @@ describe.runIf(hasEnv)("submissions (integration)", () => {
     const list = await listSubmissions(db, 5);
     expect(list.some((x) => x.id === s.id)).toBe(true);
   });
+
+  it("respekterer eksplicit retentionDays ved oprettelse", async () => {
+    const s = await createSubmission(db, { retentionDays: 30 });
+    createdIds.push(s.id);
+
+    const expected = Date.now() + 30 * 24 * 60 * 60 * 1000;
+    const actual = new Date(s.deleteAfter).getTime();
+    const toleranceMs = 24 * 60 * 60 * 1000;
+    expect(Math.abs(actual - expected)).toBeLessThan(toleranceMs);
+  });
 });

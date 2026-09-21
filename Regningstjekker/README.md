@@ -66,7 +66,7 @@ Både sync og retention bør køres dagligt:
 - **`service_role`-nøgle:** Kun server-side (i `.env`, som er git-ignored). RLS er slået til; kun service-role tilgår data direkte. Hvis nøglen nogensinde blev delt, rotér den i Supabase før go-live.
 - **`bills`-bucket:** Privat; filer tilgås via korttids-signed URLs genereret af serveren.
 - **Retention:** 90 dage (`RETENTION_DAYS` env-var); auto-delete via retention-cron sikrer GDPR-overholdelse.
-- **Hashing:** Alle kunde-identifikatorer hashes; ingen persondata sendt til Strømligning API.
+- **Persondata:** Ingen persondata sendes til Strømligning API'et (kun forbrug + region). Regninger ligger i privat bucket og tilgås via korttids-signed URLs.
 
 ## Env-variabler
 
