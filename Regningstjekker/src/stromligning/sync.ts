@@ -12,14 +12,21 @@ export async function syncPrices(deps: {
   upsert: (rows: PriceRow[]) => Promise<void>;
   delayMs?: number;
   sleep?: (ms: number) => Promise<void>;
+  maxRetries?: number;
 }): Promise<{ rowsWritten: number }> {
   const sleep = deps.sleep ?? defaultSleep;
   const delayMs = deps.delayMs ?? 0;
+  const maxRetries = deps.maxRetries ?? 3;
   let rowsWritten = 0;
 
   for (const region of REGIONS) {
     for (const bucket of CONSUMPTION_BUCKETS) {
-      const companies = await deps.client.getCompanies({ yearlyConsumption: bucket, region });
+      const companies = await getCompaniesWithRetry(
+        deps.client,
+        { yearlyConsumption: bucket, region },
+        maxRetries,
+        sleep
+      );
       const rows: PriceRow[] = [];
       for (const c of companies) {
         for (const p of c.products) {
@@ -44,4 +51,28 @@ export async function syncPrices(deps: {
     }
   }
   return { rowsWritten };
+}
+
+async function getCompaniesWithRetry(
+  client: ReturnType<typeof createStromligningClient>,
+  params: { yearlyConsumption: number; region: PriceArea },
+  maxRetries: number,
+  sleep: (ms: number) => Promise<void>
+) {
+  const retryDelays = [2000, 5000, 10000];
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await client.getCompanies(params);
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxRetries) {
+        const delayMs = retryDelays[Math.min(attempt, retryDelays.length - 1)] as number;
+        await sleep(delayMs);
+      }
+    }
+  }
+
+  throw lastError;
 }

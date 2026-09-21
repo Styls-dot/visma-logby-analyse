@@ -12,7 +12,7 @@ async function main() {
   });
   const db = createDb(cfg);
   // Uden API-nøgle: sæt delay for at respektere rate limit (5-10 kald/15 min).
-  const delayMs = cfg.stromligningApiKey ? 500 : 120_000;
+  const delayMs = cfg.stromligningApiKey ? 500 : 180_000;
   const res = await syncPrices({ client, upsert: (rows) => upsertPriceRows(db, rows), delayMs });
   console.log(`Sync færdig: ${res.rowsWritten} rækker skrevet.`);
 }
