@@ -32,6 +32,45 @@ describe("interpolateTotalCost", () => {
   it("kaster ved tomt punktsæt", () => {
     expect(() => interpolateTotalCost([], 4000)).toThrow();
   });
+
+  describe("multi-punkt arrays (3+ punkter)", () => {
+    const threePoints = [
+      { yearlyConsumption: 2000, totalCost: 1000 },
+      { yearlyConsumption: 4000, totalCost: 1400 },
+      { yearlyConsumption: 8000, totalCost: 2000 },
+    ];
+
+    it("interpolerer i 2. segment (6000 mellem 4000-8000)", () => {
+      // slope = (2000 - 1400) / (8000 - 4000) = 600 / 4000 = 0.15
+      // cost = 1400 + 0.15 * (6000 - 4000) = 1400 + 300 = 1700
+      expect(interpolateTotalCost(threePoints, 6000)).toBeCloseTo(1700, 6);
+    });
+
+    it("interpolerer i 1. segment (3000 mellem 2000-4000)", () => {
+      // slope = (1400 - 1000) / (4000 - 2000) = 0.2
+      // cost = 1000 + 0.2 * (3000 - 2000) = 1200
+      expect(interpolateTotalCost(threePoints, 3000)).toBeCloseTo(1200, 6);
+    });
+
+    it("ekstrapolerer under (1000 < 2000) via 1. segment", () => {
+      // slope = 0.2, cost = 1000 + 0.2 * (1000 - 2000) = 800
+      expect(interpolateTotalCost(threePoints, 1000)).toBeCloseTo(800, 6);
+    });
+
+    it("ekstrapolerer over (10000 > 8000) via sidste segment", () => {
+      // slope = 0.15, cost = 2000 + 0.15 * (10000 - 8000) = 2300
+      expect(interpolateTotalCost(threePoints, 10000)).toBeCloseTo(2300, 6);
+    });
+
+    it("sorterer usorteret input internt", () => {
+      const unsorted = [
+        { yearlyConsumption: 4000, totalCost: 1400 },
+        { yearlyConsumption: 2000, totalCost: 1000 },
+      ];
+      // Skal sorteres til [(2000, 1000), (4000, 1400)] og give 1200
+      expect(interpolateTotalCost(unsorted, 3000)).toBeCloseTo(1200, 6);
+    });
+  });
 });
 
 describe("computeSavings", () => {
